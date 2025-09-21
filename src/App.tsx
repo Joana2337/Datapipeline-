@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Play, Download, Filter, Calculator, BarChart3 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // Define types for TypeScript
 interface PipelineStep {
@@ -8,6 +9,8 @@ interface PipelineStep {
   config: {
     column?: string;
     value?: string;
+    chartType?: 'bar' | 'pie';
+    chartColumn?: string;
   };
 }
 
@@ -20,6 +23,9 @@ const DataPipelineApp: React.FC = () => {
   const [data, setData] = useState<DataRow[]>([]);
   const [processedData, setProcessedData] = useState<DataRow[]>([]);
   const [pipeline, setPipeline] = useState<PipelineStep[]>([]);
+  const [results, setResults] = useState<string[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [showChart, setShowChart] = useState(false);
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,24 +71,61 @@ const DataPipelineApp: React.FC = () => {
   // Process data through pipeline
   const runPipeline = () => {
     let result = [...data];
+    const newResults: string[] = [];
+    let hasChart = false;
     
     pipeline.forEach(step => {
       if (step.type === 'filter' && step.config.column && step.config.value) {
+        const beforeCount = result.length;
         result = result.filter(row => 
           row[step.config.column!]?.toLowerCase().includes(step.config.value!.toLowerCase())
         );
+        newResults.push(`Filter: Found ${result.length} rows with "${step.config.value}" in ${step.config.column} (was ${beforeCount})`);
       } else if (step.type === 'calculate' && step.config.column) {
         const values = result.map(row => parseFloat(row[step.config.column!])).filter(v => !isNaN(v));
-        const avg = values.reduce((a, b) => a + b, 0) / values.length;
-        console.log(`Average of ${step.config.column}: ${avg.toFixed(2)}`);
+        if (values.length > 0) {
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          newResults.push(`Average of ${step.config.column}: ${avg.toFixed(2)}`);
+        }
+      } else if (step.type === 'chart' && step.config.chartColumn && step.config.chartType) {
+        hasChart = true;
+        if (step.config.chartType === 'bar') {
+          // Create bar chart data - group by column values and count
+          const groupCounts: { [key: string]: number } = {};
+          result.forEach(row => {
+            const value = row[step.config.chartColumn!] || 'Unknown';
+            groupCounts[value] = (groupCounts[value] || 0) + 1;
+          });
+          const chartDataArray = Object.entries(groupCounts).map(([name, count]) => ({
+            name,
+            count
+          }));
+          setChartData(chartDataArray);
+          newResults.push(`Created bar chart showing distribution of ${step.config.chartColumn}`);
+        } else if (step.config.chartType === 'pie') {
+          // Create pie chart data
+          const groupCounts: { [key: string]: number } = {};
+          result.forEach(row => {
+            const value = row[step.config.chartColumn!] || 'Unknown';
+            groupCounts[value] = (groupCounts[value] || 0) + 1;
+          });
+          const chartDataArray = Object.entries(groupCounts).map(([name, count]) => ({
+            name,
+            value: count
+          }));
+          setChartData(chartDataArray);
+          newResults.push(`Created pie chart showing distribution of ${step.config.chartColumn}`);
+        }
       }
     });
     
+    setShowChart(hasChart);
+    setResults(newResults);
     setProcessedData(result);
   };
 
   // Update step configuration
-  const updateStepConfig = (stepId: number, config: { column?: string; value?: string }) => {
+  const updateStepConfig = (stepId: number, config: { column?: string; value?: string; chartType?: 'bar' | 'pie'; chartColumn?: string }) => {
     setPipeline(pipeline.map(step => 
       step.id === stepId ? { ...step, config: { ...step.config, ...config } } : step
     ));
@@ -161,14 +204,34 @@ const DataPipelineApp: React.FC = () => {
           {/* Results */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Results</h2>
-            {processedData.length > 0 && (
-              <div>
-                <p className="text-green-600 mb-2">✓ Pipeline completed</p>
-                <p className="text-sm text-gray-600">{processedData.length} rows processed</p>
-                <button className="mt-3 p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center">
-                  <Download className="mr-2" size={16} />
-                  Download
-                </button>
+            {results.length > 0 && (
+              <div className="space-y-2">
+                {results.map((result, index) => (
+                  <div key={index} className="p-2 bg-green-50 rounded text-sm text-green-700">
+                    ✓ {result}
+                  </div>
+                ))}
+                {processedData.length > 0 && (
+                  <button 
+                    onClick={() => {
+                      const csv = [
+                        Object.keys(processedData[0] || {}),
+                        ...processedData.map(row => Object.values(row))
+                      ].map(row => row.join(',')).join('\n');
+                      
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'processed-data.csv';
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    className="mt-3 p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center">
+                    <Download className="mr-2" size={16} />
+                    Download
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -222,8 +285,89 @@ const DataPipelineApp: React.FC = () => {
                       ))}
                     </select>
                   )}
+
+                  {step.type === 'chart' && data.length > 0 && (
+                    <div className="space-y-2">
+                      <select
+                        onChange={(e) => updateStepConfig(step.id, { chartType: e.target.value as 'bar' | 'pie' })}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="">Select chart type</option>
+                        <option value="bar">Bar Chart</option>
+                        <option value="pie">Pie Chart</option>
+                      </select>
+                      <select
+                        onChange={(e) => updateStepConfig(step.id, { chartColumn: e.target.value })}
+                        className="w-full p-2 border rounded"
+                      >
+                        <option value="">Select column for chart</option>
+                        {Object.keys(data[0] || {}).map(col => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {pipeline.some(step => step.type === 'chart') && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <h3 className="font-semibold text-yellow-800">Debug Info:</h3>
+            <p className="text-sm">showChart: {showChart ? 'true' : 'false'}</p>
+            <p className="text-sm">chartData length: {chartData.length}</p>
+            <p className="text-sm">chartData: {JSON.stringify(chartData, null, 2)}</p>
+          </div>
+        )}
+
+        {/* Chart Display */}
+        {showChart && (
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-4">Chart Visualization</h2>
+            <div style={{ width: '100%', height: '400px' }}>
+              {chartData.length > 0 ? (
+                <>
+                  {pipeline.some(step => step.type === 'chart' && step.config.chartType === 'bar') && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#3B82F6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                  {pipeline.some(step => step.type === 'chart' && step.config.chartType === 'pie') && (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${((percent as number) * 100).toFixed(0)}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No chart data available</p>
+                </div>
+              )}
             </div>
           </div>
         )}

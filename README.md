@@ -44,3 +44,36 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+
+# DataPipeline Dashboard
+
+A React-TypeScript web application for visual data processing and analysis with interactive chart generation.
+
+## Features
+- **CSV File Upload** - Drag and drop or select CSV files for processing
+- **Visual Pipeline Builder** - Add multiple processing steps with intuitive interface
+- **Advanced Data Filtering** - Filter data by any column with custom values
+- **Statistical Calculations** - Calculate averages, sums, and other metrics
+- **Real-time Data Preview** - See your data instantly after upload
+- **Export Functionality** - Download processed data as CSV files
+- **Responsive Design** - Works perfectly on desktop and mobile devices
+
+## Technologies Used
+- **React** with TypeScript for type-safe development
+- **Tailwind CSS** for modern, responsive styling
+- **Recharts** for interactive data visualization (bar charts, pie charts)
+- **Lucide React** for beautiful icons
+- **FileReader API** for CSV file processing
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn package manager
+
+### Installation
+1. Clone the repository
+```bash
+git clone https://github.com/Joana2337/Datapipeline-.git
+cd Datapipeline-
