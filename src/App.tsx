@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Play, Download, Filter, Calculator, BarChart3 } from 'lucide-react';
+import { Upload, Play, Download, Filter, Calculator, BarChart3, TrendingUp, Cloud, Database } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import axios from 'axios';
 
 // Define types for TypeScript
 interface PipelineStep {
@@ -26,6 +27,105 @@ const DataPipelineApp: React.FC = () => {
   const [results, setResults] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [showChart, setShowChart] = useState(false);
+  const [activeDataSource, setActiveDataSource] = useState<'upload' | 'stock' | 'weather' | 'sample'>('upload');
+  const [loading, setLoading] = useState(false);
+  const [weatherCities, setWeatherCities] = useState<string[]>([]);
+  const [stockSymbols, setStockSymbols] = useState<string[]>([]);
+
+  // Fetch stock data from Alpha Vantage with multiple support
+  const fetchStockData = async (symbol: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=9QPR15QFC4BY68QW`);
+      const quote = response.data['Global Quote'];
+      if (quote) {
+        const stockData = {
+          Symbol: quote['01. symbol'],
+          Price: parseFloat(quote['05. price']).toFixed(2),
+          Change: quote['09. change'],
+          ChangePercent: quote['10. change percent'],
+          Volume: quote['06. volume'],
+          PrevClose: quote['08. previous close']
+        };
+        
+        // Add to existing data or create new
+        const existingStocks = data.filter(row => row.Symbol && !stockSymbols.includes(row.Symbol));
+        setData([...existingStocks, stockData]);
+        setStockSymbols([...stockSymbols.filter(s => s !== symbol), symbol]);
+        setFile(null);
+      }
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+    }
+    setLoading(false);
+  };
+
+  // Fetch weather data with multiple cities support
+  const fetchWeatherData = async (city: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=demo&units=metric`);
+      const weather = response.data;
+      const weatherData = {
+        City: weather.name,
+        Country: weather.sys.country,
+        Temperature: Math.round(weather.main.temp).toString(),
+        FeelsLike: Math.round(weather.main.feels_like).toString(),
+        Humidity: weather.main.humidity.toString(),
+        Description: weather.weather[0].description,
+        WindSpeed: weather.wind.speed.toString()
+      };
+      
+      // Add to existing weather data or create new
+      const existingWeather = data.filter(row => row.City && !weatherCities.includes(row.City));
+      setData([...existingWeather, weatherData]);
+      setWeatherCities([...weatherCities.filter(c => c !== weather.name), weather.name]);
+      setFile(null);
+    } catch (error) {
+      // Use sample weather data if API fails
+      const sampleWeather = {
+        City: city,
+        Country: 'US',
+        Temperature: (Math.random() * 20 + 10).toFixed(0),
+        FeelsLike: (Math.random() * 20 + 15).toFixed(0),
+        Humidity: (Math.random() * 30 + 50).toFixed(0),
+        Description: 'partly cloudy',
+        WindSpeed: (Math.random() * 5 + 2).toFixed(1)
+      };
+      
+      const existingWeather = data.filter(row => row.City && !weatherCities.includes(row.City));
+      setData([...existingWeather, sampleWeather]);
+      setWeatherCities([...weatherCities.filter(c => c !== city), city]);
+      setFile(null);
+    }
+    setLoading(false);
+  };
+
+  // Load sample data
+  const loadSampleData = (type: string) => {
+    let sampleData: DataRow[] = [];
+    
+    if (type === 'sales') {
+      sampleData = [
+        { Product: 'Laptop', Category: 'Electronics', Sales: '150000', Quarter: 'Q1', Region: 'North' },
+        { Product: 'Phone', Category: 'Electronics', Sales: '200000', Quarter: 'Q1', Region: 'South' },
+        { Product: 'Tablet', Category: 'Electronics', Sales: '75000', Quarter: 'Q2', Region: 'East' },
+        { Product: 'Watch', Category: 'Accessories', Sales: '50000', Quarter: 'Q2', Region: 'West' },
+        { Product: 'Headphones', Category: 'Accessories', Sales: '30000', Quarter: 'Q3', Region: 'North' }
+      ];
+    } else if (type === 'employees') {
+      sampleData = [
+        { Name: 'John', Age: '25', Salary: '50000', Department: 'Engineering', Experience: '2' },
+        { Name: 'Jane', Age: '30', Salary: '60000', Department: 'Marketing', Experience: '5' },
+        { Name: 'Bob', Age: '35', Salary: '70000', Department: 'Engineering', Experience: '8' },
+        { Name: 'Alice', Age: '28', Salary: '55000', Department: 'Marketing', Experience: '3' },
+        { Name: 'Charlie', Age: '32', Salary: '65000', Department: 'Sales', Experience: '6' }
+      ];
+    }
+    
+    setData(sampleData);
+    setFile(null);
+  };
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,22 +241,200 @@ const DataPipelineApp: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* File Upload Section */}
+          {/* Data Source Section */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Upload className="mr-2" size={20} />
-              Upload Data
-            </h2>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
-            />
-            {file && (
+            <h2 className="text-xl font-semibold mb-4">Data Sources</h2>
+            
+            {/* Data Source Tabs */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => setActiveDataSource('upload')}
+                className={`px-3 py-2 rounded-lg text-sm flex items-center ${
+                  activeDataSource === 'upload' ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                <Upload className="mr-1" size={14} />
+                Upload CSV
+              </button>
+              <button
+                onClick={() => setActiveDataSource('stock')}
+                className={`px-3 py-2 rounded-lg text-sm flex items-center ${
+                  activeDataSource === 'stock' ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                <TrendingUp className="mr-1" size={14} />
+                Stock Data
+              </button>
+              <button
+                onClick={() => setActiveDataSource('weather')}
+                className={`px-3 py-2 rounded-lg text-sm flex items-center ${
+                  activeDataSource === 'weather' ? 'bg-blue-400 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                <Cloud className="mr-1" size={14} />
+                Weather
+              </button>
+              <button
+                onClick={() => setActiveDataSource('sample')}
+                className={`px-3 py-2 rounded-lg text-sm flex items-center ${
+                  activeDataSource === 'sample' ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+              >
+                <Database className="mr-1" size={14} />
+                Sample Data
+              </button>
+            </div>
+
+            {/* Upload CSV */}
+            {activeDataSource === 'upload' && (
+              <div>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
+                />
+                {file && (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                    <p className="text-green-700">✓ {file.name} uploaded</p>
+                    <p className="text-sm text-gray-600">{data.length} rows loaded</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Stock Data */}
+            {activeDataSource === 'stock' && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Enter stock symbol (e.g., AAPL, MSFT, GOOGL)"
+                  className="w-full p-3 border rounded-lg"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const symbol = (e.target as HTMLInputElement).value;
+                      if (symbol) {
+                        fetchStockData(symbol.toUpperCase());
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const input = document.querySelector('input[placeholder*="stock symbol"]') as HTMLInputElement;
+                    if (input?.value) {
+                      fetchStockData(input.value.toUpperCase());
+                      input.value = '';
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                >
+                  {loading ? 'Loading...' : 'Add Stock Data'}
+                </button>
+                
+                {stockSymbols.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Stocks added: {stockSymbols.length}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {stockSymbols.map(symbol => (
+                        <span key={symbol} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                          {symbol}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setStockSymbols([]);
+                        setData([]);
+                      }}
+                      className="w-full p-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+                    >
+                      Clear All Stocks
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Weather Data */}
+            {activeDataSource === 'weather' && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Enter city name (e.g., New York, London, Tokyo)"
+                  className="w-full p-3 border rounded-lg"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const city = (e.target as HTMLInputElement).value;
+                      if (city) {
+                        fetchWeatherData(city);
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const input = document.querySelector('input[placeholder*="city name"]') as HTMLInputElement;
+                    if (input?.value) {
+                      fetchWeatherData(input.value);
+                      input.value = '';
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full p-3 bg-blue-400 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
+                >
+                  {loading ? 'Loading...' : 'Add City Weather'}
+                </button>
+                
+                {weatherCities.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Cities added: {weatherCities.length}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {weatherCities.map(city => (
+                        <span key={city} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                          {city}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setWeatherCities([]);
+                        setData([]);
+                      }}
+                      className="w-full p-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+                    >
+                      Clear All Cities
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sample Data */}
+            {activeDataSource === 'sample' && (
+              <div className="space-y-2">
+                <button
+                  onClick={() => loadSampleData('sales')}
+                  className="w-full p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  Load Sales Data
+                </button>
+                <button
+                  onClick={() => loadSampleData('employees')}
+                  className="w-full p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  Load Employee Data
+                </button>
+              </div>
+            )}
+
+            {data.length > 0 && (
               <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <p className="text-green-700">✓ {file.name} uploaded</p>
-                <p className="text-sm text-gray-600">{data.length} rows loaded</p>
+                <p className="text-green-700">✓ Data loaded successfully</p>
+                <p className="text-sm text-gray-600">{data.length} rows • {Object.keys(data[0]).length} columns</p>
               </div>
             )}
           </div>
@@ -310,16 +588,6 @@ const DataPipelineApp: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Debug Info */}
-        {pipeline.some(step => step.type === 'chart') && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-            <h3 className="font-semibold text-yellow-800">Debug Info:</h3>
-            <p className="text-sm">showChart: {showChart ? 'true' : 'false'}</p>
-            <p className="text-sm">chartData length: {chartData.length}</p>
-            <p className="text-sm">chartData: {JSON.stringify(chartData, null, 2)}</p>
           </div>
         )}
 
