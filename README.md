@@ -6,7 +6,9 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 A powerful React-TypeScript data processing platform that transforms raw data into actionable insights through visual pipelines.
 
-![Main Dashboard](screenshots/dashboard.png)
+![Main Dashboard] <img width="1705" height="953" alt="Dashboard" src="https://github.com/user-attachments/assets/b13803a7-7f3a-431d-8385-868180287b20" />
+
+
 
 ## Features
 
@@ -27,7 +29,9 @@ A powerful React-TypeScript data processing platform that transforms raw data in
 - **Interactive Charts** - Hover tooltips, responsive design
 - **Data Export** - Download processed results as CSV
 
-![Weather Comparison](screenshots/weather-chart.png)
+![Weather Comparison] <img width="1710" height="951" alt="Weather" src="https://github.com/user-attachments/assets/856344a9-78fe-4c96-937f-c2ee28ccc0cf" /> , <img width="1709" height="952" alt="Chart" src="https://github.com/user-attachments/assets/86e75fca-9170-4b7c-8096-e03677c89701" />
+
+
 
 ## Technical Stack
 
@@ -40,7 +44,7 @@ A powerful React-TypeScript data processing platform that transforms raw data in
 
 ## Live Demo
 
-Try the application: [DataPipeline Dashboard](https://your-deployed-url.vercel.app)
+Try the application: [DataPipeline Dashboard](https://vercel.com/joanas-projects-4915232f/datapipeline)
 
 ## Quick Start
 
