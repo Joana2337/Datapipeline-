@@ -48,10 +48,9 @@ const DataPipelineApp: React.FC = () => {
           PrevClose: quote['08. previous close']
         };
         
-        // Add to existing data or create new
-        const existingStocks = data.filter(row => row.Symbol && !stockSymbols.includes(row.Symbol));
-        setData([...existingStocks, stockData]);
-        setStockSymbols([...stockSymbols.filter(s => s !== symbol), symbol]);
+        // Add to existing data - don't filter out existing stocks
+        setData(prevData => [...prevData, stockData]);
+        setStockSymbols(prevSymbols => [...prevSymbols.filter(s => s !== symbol), symbol]);
         setFile(null);
       }
     } catch (error) {
@@ -76,10 +75,9 @@ const DataPipelineApp: React.FC = () => {
         WindSpeed: weather.wind.speed.toString()
       };
       
-      // Add to existing weather data or create new
-      const existingWeather = data.filter(row => row.City && !weatherCities.includes(row.City));
-      setData([...existingWeather, weatherData]);
-      setWeatherCities([...weatherCities.filter(c => c !== weather.name), weather.name]);
+      // Add to existing weather data - don't filter out existing cities
+      setData(prevData => [...prevData, weatherData]);
+      setWeatherCities(prevCities => [...prevCities.filter(c => c !== weather.name), weather.name]);
       setFile(null);
     } catch (error) {
       // Use sample weather data if API fails
@@ -93,9 +91,8 @@ const DataPipelineApp: React.FC = () => {
         WindSpeed: (Math.random() * 5 + 2).toFixed(1)
       };
       
-      const existingWeather = data.filter(row => row.City && !weatherCities.includes(row.City));
-      setData([...existingWeather, sampleWeather]);
-      setWeatherCities([...weatherCities.filter(c => c !== city), city]);
+      setData(prevData => [...prevData, sampleWeather]);
+      setWeatherCities(prevCities => [...prevCities.filter(c => c !== city), city]);
       setFile(null);
     }
     setLoading(false);

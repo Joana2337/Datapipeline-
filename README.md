@@ -2,78 +2,55 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-
 # DataPipeline Dashboard
 
-A React-TypeScript web application for visual data processing and analysis with interactive chart generation.
+A powerful React-TypeScript data processing platform that transforms raw data into actionable insights through visual pipelines.
+
+![Main Dashboard](screenshots/dashboard.png)
 
 ## Features
-- **CSV File Upload** - Drag and drop or select CSV files for processing
-- **Visual Pipeline Builder** - Add multiple processing steps with intuitive interface
-- **Advanced Data Filtering** - Filter data by any column with custom values
-- **Statistical Calculations** - Calculate averages, sums, and other metrics
-- **Real-time Data Preview** - See your data instantly after upload
-- **Export Functionality** - Download processed data as CSV files
-- **Responsive Design** - Works perfectly on desktop and mobile devices
 
-## Technologies Used
-- **React** with TypeScript for type-safe development
-- **Tailwind CSS** for modern, responsive styling
-- **Recharts** for interactive data visualization (bar charts, pie charts)
-- **Lucide React** for beautiful icons
-- **FileReader API** for CSV file processing
+### 📊 Multiple Data Sources
+- **CSV Upload** - Process local files with drag-and-drop interface
+- **Live Stock Data** - Real-time stock quotes via Alpha Vantage API
+- **Weather Data** - Current weather conditions for any global city
+- **Sample Datasets** - Pre-loaded data for quick demonstrations
 
-## Getting Started
+### 🔧 Visual Pipeline Builder
+- **Filtering** - Filter data by any column with custom criteria
+- **Calculations** - Statistical analysis (averages, aggregations)
+- **Visualizations** - Interactive charts (bar charts, pie charts)
+
+### 📈 Advanced Analytics
+- **Multi-City Weather Comparison** - Compare temperatures, humidity across multiple locations
+- **Multi-Stock Analysis** - Track and compare multiple stock symbols
+- **Interactive Charts** - Hover tooltips, responsive design
+- **Data Export** - Download processed results as CSV
+
+![Weather Comparison](screenshots/weather-chart.png)
+
+## Technical Stack
+
+- **Frontend**: React 18 with TypeScript
+- **Styling**: Tailwind CSS for responsive design
+- **Charts**: Recharts library for data visualization
+- **APIs**: Alpha Vantage (stocks), OpenWeatherMap (weather)
+- **File Processing**: FileReader API for CSV parsing
+- **HTTP Client**: Axios for API requests
+
+## Live Demo
+
+Try the application: [DataPipeline Dashboard](https://your-deployed-url.vercel.app)
+
+## Quick Start
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn package manager
+- Node.js 16+
+- npm or yarn
 
 ### Installation
-1. Clone the repository
 ```bash
 git clone https://github.com/Joana2337/Datapipeline-.git
 cd Datapipeline-
+npm install
+npm start
